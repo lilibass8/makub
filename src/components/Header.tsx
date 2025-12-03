@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Menu, Sparkles } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -35,9 +36,11 @@ const Header = () => {
         </nav>
 
         <div className="flex items-center gap-3">
-          <Button variant="ghost" className="hidden md:inline-flex">
-            تسجيل الدخول
-          </Button>
+          <Link to="/login">
+            <Button variant="ghost" className="hidden md:inline-flex">
+              تسجيل الدخول
+            </Button>
+          </Link>
           <Button variant="hero" className="hidden md:inline-flex">
             انضم الآن
           </Button>
@@ -72,9 +75,11 @@ const Header = () => {
               تواصل معنا
             </a>
             <div className="flex flex-col gap-2 pt-2">
-              <Button variant="ghost" className="w-full">
-                تسجيل الدخول
-              </Button>
+              <Link to="/login" className="w-full">
+                <Button variant="ghost" className="w-full">
+                  تسجيل الدخول
+                </Button>
+              </Link>
               <Button variant="hero" className="w-full">
                 انضم الآن
               </Button>
