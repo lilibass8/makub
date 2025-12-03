@@ -41,9 +41,11 @@ const Header = () => {
               تسجيل الدخول
             </Button>
           </Link>
-          <Button variant="hero" className="hidden md:inline-flex">
-            انضم الآن
-          </Button>
+          <Link to="/register">
+            <Button variant="hero" className="hidden md:inline-flex">
+              انضم الآن
+            </Button>
+          </Link>
           <Button
             variant="ghost"
             size="icon"
@@ -80,9 +82,11 @@ const Header = () => {
                   تسجيل الدخول
                 </Button>
               </Link>
-              <Button variant="hero" className="w-full">
-                انضم الآن
-              </Button>
+              <Link to="/register" className="w-full">
+                <Button variant="hero" className="w-full">
+                  انضم الآن
+                </Button>
+              </Link>
             </div>
           </nav>
         </div>
