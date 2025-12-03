@@ -1,13 +1,22 @@
 import { Button } from "@/components/ui/button";
 import { Sparkles, Users, Calendar } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Hero = () => {
+  const navigate = useNavigate();
+
+  const scrollToArtists = () => {
+    const artistsSection = document.getElementById("artists");
+    if (artistsSection) {
+      artistsSection.scrollIntoView({ behavior: "smooth" });
+    }
+  };
   return (
     <section id="home" className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
       {/* Background with gradient overlay */}
       <div className="absolute inset-0 bg-gradient-hero opacity-10" />
       <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?q=80&w=2000')] bg-cover bg-center opacity-20" />
-      
+
       <div className="container relative z-10 py-20 text-center">
         <div className="mx-auto max-w-3xl space-y-6">
           <h1 className="text-4xl md:text-6xl font-bold leading-tight">
@@ -16,13 +25,13 @@ const Hero = () => {
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
             اكتشف أفضل الميكب آرتست والمختصين، احجز خدماتك، أو استأجر مساحة عمل فاخرة لبدء مشروعك
           </p>
-          
+
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-            <Button variant="hero" size="lg" className="text-lg">
+            <Button variant="hero" size="lg" className="text-lg" onClick={scrollToArtists}>
               <Sparkles className="ml-2 h-5 w-5" />
               استكشف الآن
             </Button>
-            <Button variant="outline" size="lg" className="text-lg">
+            <Button variant="outline" size="lg" className="text-lg" onClick={() => navigate("/rent-space")}>
               استأجر مساحة
             </Button>
           </div>
