@@ -7,44 +7,44 @@ const ContactSection = () => {
         {
             icon: Phone,
             title: "اتصل بنا",
-            value: "+966 50 123 4567",
-            subValue: "+966 55 987 6543",
+            value: "+968 92 123 456",
+            subValue: "+968 95 678 901",
             color: "text-green-500",
             bgColor: "bg-green-500/10",
-            action: "tel:+966501234567"
+            action: "tel:+96892123456"
         },
         {
             icon: MessageCircle,
             title: "واتساب",
-            value: "+966 50 123 4567",
+            value: "+968 92 123 456",
             subValue: "متاح 24/7",
             color: "text-emerald-500",
             bgColor: "bg-emerald-500/10",
-            action: "https://wa.me/966501234567"
+            action: "https://wa.me/96892123456"
         },
         {
             icon: Mail,
             title: "البريد الإلكتروني",
-            value: "info@beautyboutique.sa",
+            value: "info@beautyboutique.om",
             subValue: "للاستفسارات العامة",
             color: "text-blue-500",
             bgColor: "bg-blue-500/10",
-            action: "mailto:info@beautyboutique.sa"
+            action: "mailto:info@beautyboutique.om"
         },
         {
             icon: Instagram,
             title: "إنستغرام",
-            value: "@beautyboutique",
+            value: "@beautyboutique.om",
             subValue: "تابعنا لآخر الأخبار",
             color: "text-pink-500",
             bgColor: "bg-pink-500/10",
-            action: "https://instagram.com/beautyboutique"
+            action: "https://instagram.com/beautyboutique.om"
         },
         {
             icon: MapPin,
             title: "الموقع",
-            value: "الرياض، المملكة العربية السعودية",
-            subValue: "حي الملقا، شارع الأمير سلطان",
+            value: "مسقط، سلطنة عمان",
+            subValue: "الخوير، شارع السلطان قابوس",
             color: "text-red-500",
             bgColor: "bg-red-500/10",
             action: "https://maps.google.com"
@@ -132,7 +132,7 @@ const ContactSection = () => {
                             variant="hero"
                             size="lg"
                             className="group min-w-[200px]"
-                            onClick={() => window.open('https://wa.me/966501234567', '_blank')}
+                            onClick={() => window.open('https://wa.me/96892123456', '_blank')}
                         >
                             <MessageCircle className="ml-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
                             تواصل عبر واتساب
@@ -141,7 +141,7 @@ const ContactSection = () => {
                             variant="outline"
                             size="lg"
                             className="min-w-[200px]"
-                            onClick={() => window.open('tel:+966501234567', '_blank')}
+                            onClick={() => window.open('tel:+96892123456', '_blank')}
                         >
                             <Phone className="ml-2 h-5 w-5" />
                             اتصل الآن
