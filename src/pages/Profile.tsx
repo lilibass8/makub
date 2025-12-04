@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -10,26 +10,48 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Mail, Phone, MapPin, Calendar, Star, Edit2, Save, X } from "lucide-react";
+import { User, Mail, Phone, MapPin, Calendar, Star, Edit2, Save, X, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { updateUserProfile } from "@/lib/firestore";
+import { Timestamp } from "firebase/firestore";
 
 const Profile = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
+    const { currentUser, userProfile, logout } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-    // بيانات المستخدم (في التطبيق الحقيقي، ستأتي من API أو Context)
+    // Initialize user data from Firebase
     const [userData, setUserData] = useState({
-        fullName: "فاطمة الحراصية",
-        email: "fatima@example.com",
-        phone: "+968 92345678",
-        location: "muscat",
-        accountType: "client",
-        joinDate: "2024-01-15",
-        avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200",
+        fullName: userProfile?.fullName || "",
+        email: userProfile?.email || "",
+        phone: userProfile?.phone || "",
+        location: userProfile?.location || "",
+        accountType: userProfile?.accountType || "client",
+        joinDate: userProfile?.createdAt?.toDate().toISOString() || new Date().toISOString(),
+        avatar: "",
     });
 
     const [editData, setEditData] = useState({ ...userData });
+
+    // Update userData when userProfile changes
+    useEffect(() => {
+        if (userProfile) {
+            const newUserData = {
+                fullName: userProfile.fullName,
+                email: userProfile.email,
+                phone: userProfile.phone,
+                location: userProfile.location,
+                accountType: userProfile.accountType,
+                joinDate: userProfile.createdAt?.toDate().toISOString() || new Date().toISOString(),
+                avatar: "",
+            };
+            setUserData(newUserData);
+            setEditData(newUserData);
+        }
+    }, [userProfile]);
 
     // سجل الحجوزات (مثال)
     const bookings = [
@@ -53,7 +75,7 @@ const Profile = () => {
         },
     ];
 
-    const handleSaveChanges = () => {
+    const handleSaveChanges = async () => {
         // Phone validation for Oman
         const phoneRegex = /^(\+968|968)?[79]\d{7}$/;
         if (!phoneRegex.test(editData.phone.replace(/\s/g, ''))) {
@@ -65,12 +87,49 @@ const Profile = () => {
             return;
         }
 
-        setUserData({ ...editData });
-        setIsEditing(false);
-        toast({
-            title: "تم الحفظ بنجاح! ✓",
-            description: "تم تحديث بياناتك الشخصية",
-        });
+        if (!currentUser) return;
+
+        try {
+            // Update user profile in Firestore
+            await updateUserProfile(currentUser.uid, {
+                fullName: editData.fullName,
+                phone: editData.phone,
+                location: editData.location,
+            });
+
+            setUserData({ ...editData });
+            setIsEditing(false);
+            toast({
+                title: "تم الحفظ بنجاح! ✓",
+                description: "تم تحديث بياناتك الشخصية",
+            });
+        } catch (error) {
+            toast({
+                title: "خطأ",
+                description: "حدث خطأ أثناء حفظ التغييرات",
+                variant: "destructive",
+            });
+        }
+    };
+
+    const handleLogout = async () => {
+        setIsLoggingOut(true);
+        try {
+            await logout();
+            toast({
+                title: "تم تسجيل الخروج",
+                description: "نراك قريباً!",
+            });
+            navigate("/");
+        } catch (error) {
+            toast({
+                title: "خطأ",
+                description: "حدث خطأ أثناء تسجيل الخروج",
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoggingOut(false);
+        }
     };
 
     const handleCancelEdit = () => {
@@ -146,14 +205,25 @@ const Profile = () => {
                                         </div>
 
                                         {!isEditing ? (
-                                            <Button
-                                                variant="outline"
-                                                onClick={() => setIsEditing(true)}
-                                                className="gap-2"
-                                            >
-                                                <Edit2 className="h-4 w-4" />
-                                                تعديل الملف الشخصي
-                                            </Button>
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={() => setIsEditing(true)}
+                                                    className="gap-2"
+                                                >
+                                                    <Edit2 className="h-4 w-4" />
+                                                    تعديل الملف الشخصي
+                                                </Button>
+                                                <Button
+                                                    variant="destructive"
+                                                    onClick={handleLogout}
+                                                    className="gap-2"
+                                                    disabled={isLoggingOut}
+                                                >
+                                                    <LogOut className="h-4 w-4" />
+                                                    {isLoggingOut ? "جاري الخروج..." : "تسجيل الخروج"}
+                                                </Button>
+                                            </div>
                                         ) : (
                                             <div className="flex gap-2">
                                                 <Button

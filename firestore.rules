@@ -1,0 +1,188 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ==========================================
+    // Helper Functions
+    // ==========================================
+    
+    // Check if user is authenticated
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Check if user is the owner of the document
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // Check if user is the document owner (for documents with uid field)
+    function isDocumentOwner() {
+      return isSignedIn() && request.auth.uid == resource.data.uid;
+    }
+    
+    // Check if incoming data has required fields
+    function hasRequiredUserFields() {
+      return request.resource.data.keys().hasAll([
+        'uid', 'email', 'fullName', 'phone', 
+        'location', 'accountType', 'createdAt', 'updatedAt'
+      ]);
+    }
+    
+    // Validate account type
+    function isValidAccountType() {
+      return request.resource.data.accountType in ['client', 'artist', 'owner'];
+    }
+    
+    // Check if user is an artist
+    function isArtist() {
+      return isSignedIn() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accountType == 'artist';
+    }
+    
+    // Check if user is a space owner
+    function isSpaceOwner() {
+      return isSignedIn() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accountType == 'owner';
+    }
+    
+    // ==========================================
+    // Users Collection
+    // ==========================================
+    match /users/{userId} {
+      // Allow read if:
+      // - User is reading their own document, OR
+      // - User is authenticated (for public profile info)
+      allow read: if isSignedIn();
+      
+      // Allow create if:
+      // - User is authenticated
+      // - Creating their own document (uid matches auth.uid)
+      // - Has all required fields
+      // - Account type is valid
+      allow create: if isSignedIn() && 
+                       isOwner(userId) && 
+                       hasRequiredUserFields() && 
+                       isValidAccountType() &&
+                       request.resource.data.uid == request.auth.uid;
+      
+      // Allow update if:
+      // - User is updating their own document
+      // - Not changing uid or email
+      // - Account type is valid
+      allow update: if isOwner(userId) && 
+                       request.resource.data.uid == resource.data.uid &&
+                       request.resource.data.email == resource.data.email &&
+                       isValidAccountType();
+      
+      // Allow delete if user owns the document
+      allow delete: if isOwner(userId);
+    }
+    
+    // ==========================================
+    // Artists Collection
+    // ==========================================
+    match /artists/{artistId} {
+      // Anyone can read artist profiles (public information)
+      allow read: if true;
+      
+      // Only artists can create their profile
+      // Must reference their own user ID
+      allow create: if isArtist() && 
+                       request.resource.data.userId == request.auth.uid;
+      
+      // Only the artist can update their own profile
+      allow update: if isSignedIn() && 
+                       resource.data.userId == request.auth.uid;
+      
+      // Only the artist can delete their profile
+      allow delete: if isSignedIn() && 
+                       resource.data.userId == request.auth.uid;
+    }
+    
+    // ==========================================
+    // Bookings Collection
+    // ==========================================
+    match /bookings/{bookingId} {
+      // Users can read their own bookings (as client or artist)
+      allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid ||
+        resource.data.artistId == get(/databases/$(database)/documents/artists/$(resource.data.artistId)).data.userId
+      );
+      
+      // Only authenticated clients can create bookings
+      // Must set themselves as the userId
+      allow create: if isSignedIn() && 
+                       request.resource.data.userId == request.auth.uid &&
+                       request.resource.data.status == 'pending';
+      
+      // Users can update:
+      // - Clients can update their own bookings (to cancel)
+      // - Artists can update bookings for their services (to confirm/complete)
+      allow update: if isSignedIn() && (
+        (resource.data.userId == request.auth.uid) ||
+        (resource.data.artistId == get(/databases/$(database)/documents/artists/$(resource.data.artistId)).data.userId)
+      );
+      
+      // Only the booking creator can delete
+      allow delete: if isSignedIn() && 
+                       resource.data.userId == request.auth.uid;
+    }
+    
+    // ==========================================
+    // Spaces Collection
+    // ==========================================
+    match /spaces/{spaceId} {
+      // Anyone can read available spaces (public listings)
+      allow read: if true;
+      
+      // Only space owners can create spaces
+      allow create: if isSpaceOwner() && 
+                       request.resource.data.ownerId == request.auth.uid;
+      
+      // Only the space owner can update their space
+      allow update: if isSignedIn() && 
+                       resource.data.ownerId == request.auth.uid;
+      
+      // Only the space owner can delete their space
+      allow delete: if isSignedIn() && 
+                       resource.data.ownerId == request.auth.uid;
+    }
+    
+    // ==========================================
+    // Space Bookings Collection
+    // ==========================================
+    match /spaceBookings/{spaceBookingId} {
+      // Users can read their own space bookings (as renter or owner)
+      allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid ||
+        get(/databases/$(database)/documents/spaces/$(resource.data.spaceId)).data.ownerId == request.auth.uid
+      );
+      
+      // Authenticated users can create space bookings
+      allow create: if isSignedIn() && 
+                       request.resource.data.userId == request.auth.uid &&
+                       request.resource.data.status == 'pending';
+      
+      // Users can update:
+      // - Renters can update their bookings (to cancel)
+      // - Space owners can update bookings for their spaces (to confirm/complete)
+      allow update: if isSignedIn() && (
+        resource.data.userId == request.auth.uid ||
+        get(/databases/$(database)/documents/spaces/$(resource.data.spaceId)).data.ownerId == request.auth.uid
+      );
+      
+      // Only the renter can delete their booking
+      allow delete: if isSignedIn() && 
+                       resource.data.userId == request.auth.uid;
+    }
+    
+    // ==========================================
+    // Deny all other access
+    // ==========================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,101 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // ==========================================
+    // Helper Functions
+    // ==========================================
+    
+    // Check if user is authenticated
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Validate image file types
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    // Check file size (max 5MB)
+    function isValidSize() {
+      return request.resource.size < 5 * 1024 * 1024;
+    }
+    
+    // ==========================================
+    // User Profile Images
+    // ==========================================
+    match /users/{userId}/{allPaths=**} {
+      // Users can read their own files
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      
+      // Users can write to their own directory
+      // Only images, max 5MB
+      allow write: if isSignedIn() && 
+                      request.auth.uid == userId && 
+                      isImage() && 
+                      isValidSize();
+      
+      // Users can delete their own files
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // ==========================================
+    // Artist Portfolio Images
+    // ==========================================
+    match /artists/{artistId}/{allPaths=**} {
+      // Anyone can read artist images (public)
+      allow read: if true;
+      
+      // Only authenticated users can upload
+      // Only images, max 5MB
+      allow write: if isSignedIn() && 
+                      isImage() && 
+                      isValidSize();
+      
+      // Only the uploader can delete
+      allow delete: if isSignedIn();
+    }
+    
+    // ==========================================
+    // Space Images
+    // ==========================================
+    match /spaces/{spaceId}/{allPaths=**} {
+      // Anyone can read space images (public listings)
+      allow read: if true;
+      
+      // Only authenticated users can upload
+      // Only images, max 5MB
+      allow write: if isSignedIn() && 
+                      isImage() && 
+                      isValidSize();
+      
+      // Only authenticated users can delete
+      allow delete: if isSignedIn();
+    }
+    
+    // ==========================================
+    // Booking Related Files
+    // ==========================================
+    match /bookings/{bookingId}/{allPaths=**} {
+      // Only authenticated users can read
+      allow read: if isSignedIn();
+      
+      // Only authenticated users can upload
+      // Only images, max 5MB
+      allow write: if isSignedIn() && 
+                      isImage() && 
+                      isValidSize();
+      
+      // Only authenticated users can delete
+      allow delete: if isSignedIn();
+    }
+    
+    // ==========================================
+    // Deny all other access
+    // ==========================================
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

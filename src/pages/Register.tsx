@@ -9,11 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle2, User, Mail, Phone, Lock, MapPin, Building2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { signUpUser } from "@/lib/auth";
+import { createUserProfile } from "@/lib/firestore";
 
 const Register = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const [accountType, setAccountType] = useState<string>("");
+    const [isLoading, setIsLoading] = useState(false);
     const [formData, setFormData] = useState({
         fullName: "",
         email: "",
@@ -23,7 +26,7 @@ const Register = () => {
         location: "",
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!formData.fullName || !formData.email || !formData.phone || !formData.password || !accountType) {
@@ -55,12 +58,36 @@ const Register = () => {
             return;
         }
 
-        toast({
-            title: "تم إنشاء الحساب بنجاح! 🎉",
-            description: "مرحباً بك في بوتيك الجمال",
-        });
+        setIsLoading(true);
 
-        navigate("/login");
+        try {
+            // Create Firebase Auth user
+            const userCredential = await signUpUser(formData.email, formData.password);
+
+            // Create user profile in Firestore
+            await createUserProfile(userCredential.user.uid, {
+                email: formData.email,
+                fullName: formData.fullName,
+                phone: formData.phone,
+                location: formData.location,
+                accountType: accountType as "client" | "artist" | "owner",
+            });
+
+            toast({
+                title: "تم إنشاء الحساب بنجاح! 🎉",
+                description: "مرحباً بك في بوتيك الجمال",
+            });
+
+            navigate("/login");
+        } catch (error: any) {
+            toast({
+                title: "خطأ في إنشاء الحساب",
+                description: error.message,
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleChange = (field: string, value: string) => {
@@ -210,8 +237,15 @@ const Register = () => {
                                 </div>
                             </div>
 
-                            <Button type="submit" variant="hero" className="w-full text-lg">
-                                إنشاء حساب
+                            <Button type="submit" variant="hero" className="w-full text-lg" disabled={isLoading}>
+                                {isLoading ? (
+                                    <span className="flex items-center gap-2">
+                                        <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        جاري إنشاء الحساب...
+                                    </span>
+                                ) : (
+                                    "إنشاء حساب"
+                                )}
                             </Button>
 
                             <div className="text-center text-sm text-muted-foreground">

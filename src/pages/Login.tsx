@@ -5,9 +5,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Sparkles, Mail, Lock, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { signInUser } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
     const navigate = useNavigate();
+    const { toast } = useToast();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -16,13 +19,23 @@ const Login = () => {
         e.preventDefault();
         setIsLoading(true);
 
-        // Simulate login process
-        setTimeout(() => {
-            console.log("Login attempt with:", { email, password });
-            setIsLoading(false);
+        try {
+            await signInUser(email, password);
+            toast({
+                title: "تم تسجيل الدخول بنجاح! 🎉",
+                description: "مرحباً بعودتك",
+            });
             // Navigate to profile page after successful login
             navigate("/profile");
-        }, 1500);
+        } catch (error: any) {
+            toast({
+                title: "خطأ في تسجيل الدخول",
+                description: error.message,
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
