@@ -138,6 +138,16 @@ const ArtistBooking = () => {
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
     const [selectedTime, setSelectedTime] = useState<string>("");
     const [notes, setNotes] = useState<string>("");
+    const [userRating, setUserRating] = useState<number>(0);
+    const [hoveredRating, setHoveredRating] = useState<number>(0);
+
+    const handleRating = (rating: number) => {
+        setUserRating(rating);
+        toast({
+            title: "شكراً لتقييمك! ⭐",
+            description: `لقد قيمت ${artist?.name} بـ ${rating} نجوم`,
+        });
+    };
 
     if (!artist) {
         return (
@@ -222,6 +232,38 @@ const ArtistBooking = () => {
                                         <div className="flex items-center gap-1 text-muted-foreground">
                                             <MapPin className="h-4 w-4" />
                                             <span>{artist.location}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* User Rating Section */}
+                                    <div className="mt-4 pt-4 border-t">
+                                        <p className="text-sm text-muted-foreground mb-2">
+                                            {userRating > 0 ? "تقييمك:" : "قيّم هذا الفنان:"}
+                                        </p>
+                                        <div className="flex items-center gap-2">
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                <button
+                                                    key={star}
+                                                    onClick={() => handleRating(star)}
+                                                    onMouseEnter={() => setHoveredRating(star)}
+                                                    onMouseLeave={() => setHoveredRating(0)}
+                                                    className="transition-transform hover:scale-125 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
+                                                >
+                                                    <Star
+                                                        className={cn(
+                                                            "h-7 w-7 transition-all cursor-pointer",
+                                                            star <= (hoveredRating || userRating)
+                                                                ? "fill-amber-400 text-amber-400"
+                                                                : "text-gray-300"
+                                                        )}
+                                                    />
+                                                </button>
+                                            ))}
+                                            {userRating > 0 && (
+                                                <span className="text-sm font-medium text-amber-600 mr-2">
+                                                    {userRating} {userRating === 5 ? "ممتاز!" : userRating >= 4 ? "رائع!" : userRating >= 3 ? "جيد" : ""}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

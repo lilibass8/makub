@@ -1,8 +1,11 @@
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, MapPin, Calendar } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const artists = [
   {
@@ -74,6 +77,18 @@ const artists = [
 ];
 
 const ArtistsGrid = () => {
+  const { toast } = useToast();
+  const [ratings, setRatings] = useState<{ [key: number]: number }>({});
+  const [hoveredStars, setHoveredStars] = useState<{ [key: number]: number }>({});
+
+  const handleRating = (artistId: number, artistName: string, rating: number) => {
+    setRatings(prev => ({ ...prev, [artistId]: rating }));
+    toast({
+      title: "شكراً لتقييمك! ⭐",
+      description: `لقد قيمت ${artistName} بـ ${rating} نجوم`,
+    });
+  };
+
   return (
     <section id="artists" className="py-20 bg-muted/30">
       <div className="container">
@@ -123,6 +138,36 @@ const ArtistsGrid = () => {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">{artist.reviews} تقييم</span>
                   <span className="text-lg font-bold text-primary">{artist.price}</span>
+                </div>
+
+                {/* Rating Stars */}
+                <div className="pt-2 border-t">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    {ratings[artist.id] > 0 ? "تقييمك:" : "قيّم هذا الفنان:"}
+                  </p>
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleRating(artist.id, artist.name, star);
+                        }}
+                        onMouseEnter={() => setHoveredStars(prev => ({ ...prev, [artist.id]: star }))}
+                        onMouseLeave={() => setHoveredStars(prev => ({ ...prev, [artist.id]: 0 }))}
+                        className="transition-transform hover:scale-110 focus:outline-none"
+                      >
+                        <Star
+                          className={cn(
+                            "h-5 w-5 transition-all cursor-pointer",
+                            star <= (hoveredStars[artist.id] || ratings[artist.id] || 0)
+                              ? "fill-amber-400 text-amber-400"
+                              : "text-gray-300"
+                          )}
+                        />
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </CardContent>
 
